@@ -41,16 +41,16 @@ def process_arguments():
     # Return the arguments
     return parser.parse_args()
 
-def read_ir_id_from_csv(input_csv):
+def get_ir_id_dataframe(input_csv):
     """
-    Reads input file and returns list of interpretation request IDs
+    Reads information in input file dataframe
     """
     # Read input CSV file into a dataframe
     request_id_df = pandas.read_csv(input_csv)
     # Split the request_id (e.g. OPA-1234-1) column into 3 seperate fields cip, ir_id and version (e.g. 'OPA', '1234' and '1')
     request_id_df[['cip', 'ir_id', 'version']] = request_id_df['request_id'].str.split('-',expand=True)
     # Return a list of the interpretation request IDs
-    return list(request_id_df['ir_id'])
+    return request_id_df
 
 def get_participant_id(ir_id):
     """
@@ -58,6 +58,13 @@ def get_participant_id(ir_id):
     """
     # Use JellyPy to query CIP-API and get proband ID from the interpretation request ID. 
     return get_interpretation_request_list(interpretation_request_id=ir_id)[0]['proband']
+
+def add_participant_id_to_df(request_id_df):
+    """
+    Takes a dataframe containing ir_id and adds participant ID from CIPAPI
+    """
+    request_id_df['Participant Id'] = request_id_df['ir_id'].apply(get_participant_id)
+    print request_id_df
 
 def query_geneworks(participant_ids):
     """
@@ -74,25 +81,6 @@ def query_geneworks(participant_ids):
     # Return rows that match the participant ids
     return gw_results[gw_results['Participant Id'].isin(participant_ids)][fields]
 
-def missing_participant(participant_id, gw_results):
-    """
-    Checks if a participant ID is missing from the Geneworks results. Returns True if patient is missing. 
-    """
-    # Check if participant is missing from the returned results. Return True if missing, False if present. 
-    if participant_id in list(gw_results['Participant Id']):
-        return False
-    return True
-
-def flag_missing_participants(participant_ids, gw_results, out_file):
-    """
-    If a GeL participant is not found in Geneworks, a note is added to the end of the results file
-    """
-    # For any participants not found in gw, add a note to the end of the output file.
-    for participant_id in participant_ids:
-        if missing_participant(participant_id, gw_results):
-            with open(out_file, 'a') as out:
-                out.write('Participant {participant_id} not in GeneWorks\n'.format(participant_id=participant_id))
-
 def main():
     # Get command line arguments
     args = process_arguments()
@@ -104,16 +92,16 @@ def main():
     in_file = args.input_file
     # CSV file to write results to
     out_file = args.output_file
-    # Get list of interpretation request IDs from the input file
-    interpretation_request_ids = read_ir_id_from_csv(in_file)
-    # Use CIP-API to get proband IDs from request IDs
-    participant_ids = [get_participant_id(ir_id) for ir_id in interpretation_request_ids]
-    # Query Geneworks, returens a dataframe with results
-    gw_results = query_geneworks(participant_ids)
+    # Convert input_file to dataframe, splitting request_id into seperate columns for cip, ir_id and version 
+    ir_id_dataframe = get_ir_id_dataframe(in_file)
+    # Use CIPAPI to find participant IDs and add to dataframe
+    add_participant_id_to_df(ir_id_dataframe)
+    # Query Geneworks using list of participant IDs from dataframe, returens a dataframe with results
+    gw_results = query_geneworks(list(ir_id_dataframe['Participant Id']))
+    # Merge dataframes with an outer join on 'partcipant_id'
+    all_results = ir_id_dataframe.merge(gw_results, how='outer', on='Participant Id')
     # Write results to csv file
-    gw_results.to_csv(out_file, index=False)
-    # For any participants not found in the gw results, add a note to the bottom of the output file.
-    flag_missing_participants(participant_ids, gw_results, out_file)
+    all_results.to_csv(out_file, index=False)
 
 if __name__ == '__main__':
     main()
