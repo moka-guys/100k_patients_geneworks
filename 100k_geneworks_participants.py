@@ -99,6 +99,8 @@ def main():
     gw_results = query_geneworks(list(ir_id_dataframe['Participant Id']))
     # Merge dataframes with an outer join on 'partcipant_id'
     all_results = ir_id_dataframe.merge(gw_results, how='outer', on='Participant Id')
+    # To make data transfer easier re-order the columns so they match the order in GeL confirmations spreadsheet
+    all_results = all_results[['request_id', 'cip', 'ir_id', 'version', 'FirstName', 'LastName', 'DoB', ' family_id', 'Participant Id', 'PatientTrustID']]
     # Write results to csv file
     all_results.to_csv(out_file, index=False)
 
