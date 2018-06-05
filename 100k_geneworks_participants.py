@@ -3,7 +3,7 @@ v1.0 - AB 2018/05/24
 Requirements:
     Access to Geneworks via ODBC
     Access to CIPAPI
-    JellyPy
+    JellyPy (in PYTHONPATH)
     pyodbc
     pandas
 
@@ -25,6 +25,7 @@ optional arguments:
 import argparse
 import pyodbc
 import pandas
+# import required functions from JellyPy pyCIPAPI
 from pyCIPAPI.interpretation_requests import get_interpretation_request_list
 
 def process_arguments():
