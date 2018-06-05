@@ -65,6 +65,7 @@ def add_participant_id_to_df(request_id_df):
     """
     Takes a dataframe containing ir_id and adds participant ID from CIPAPI
     """
+    # Use pandas .apply() method to call get_participant_id function for every ir_id in the dataframe. The results is stored in a new field 'Participant Id'.
     request_id_df['Participant Id'] = request_id_df['ir_id'].apply(get_participant_id)
 
 def query_geneworks(participant_ids):
