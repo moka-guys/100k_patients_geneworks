@@ -10,7 +10,8 @@ Requirements:
 usage: 100k_geneworks_participants.py [-h] -i INPUT_FILE -o OUTPUT_FILE
 
 Takes an input csv file containing request ids and family ids in format sent
-in GeL results emailOutputs a csv file with patient information from Geneworks
+in GeL results email. Outputs a csv file with patient information from
+Geneworks
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -32,7 +33,7 @@ def process_arguments():
     """
     # Create ArgumentParser object. Description message will be displayed as part of help message if script is run with -h flag
     parser = argparse.ArgumentParser(
-        description='Takes an input csv file containing request ids and family ids in format sent in GeL results email' 
+        description='Takes an input csv file containing request ids and family ids in format sent in GeL results email. ' 
         'Outputs a csv file with patient information from Geneworks'
     )
     # Define the arguments that will be taken.
