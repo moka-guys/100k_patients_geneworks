@@ -22,6 +22,7 @@ Requirements:
 * Access to CIPAPI
 * JellyPy (in PYTHONPATH)
 * pyodbc
+* numpy
 * pandas
 
 Create the input csv file (see above) and transfer to the server where code will be run.

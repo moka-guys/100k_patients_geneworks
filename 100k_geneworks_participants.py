@@ -5,6 +5,7 @@ Requirements:
     Access to CIPAPI
     JellyPy (in PYTHONPATH)
     pyodbc
+    numpy
     pandas
 
 usage: 100k_geneworks_participants.py [-h] -i INPUT_FILE -o OUTPUT_FILE
@@ -24,6 +25,7 @@ optional arguments:
 
 import argparse
 import pyodbc
+import numpy as np
 import pandas
 # import required functions from JellyPy pyCIPAPI
 from pyCIPAPI.interpretation_requests import get_interpretation_request_list
@@ -58,8 +60,15 @@ def get_participant_id(ir_id):
     """
     Takes an interpretation request ID and returns participant ID from CIPAPI
     """
+    # If no ir_id is passed to function, return NaN. (Use NaN rather than None, pandas convention and this prevents reuslts with no participant ID being returned from GW)
+    if not ir_id:
+        return np.NaN
     # Use JellyPy to query CIP-API and get proband ID from the interpretation request ID. 
-    return get_interpretation_request_list(interpretation_request_id=ir_id)[0]['proband']
+    try:
+        return get_interpretation_request_list(interpretation_request_id=ir_id)[0]['proband']
+    # if no proband ID is returned from CIPAPI, return NaN. (Use NaN rather than None, pandas convention and this prevents reuslts with no participant ID being returned from GW)
+    except IndexError:
+        return np.NaN
 
 def add_participant_id_to_df(request_id_df):
     """
@@ -80,6 +89,7 @@ def query_geneworks(participant_ids):
     gw_results = pandas.read_sql(sql,cnxn)
     # Fields that are required from geneworks results
     fields = ['PatientTrustID', 'LastName', 'FirstName', 'DoB', 'Participant Id']
+    print gw_results[gw_results['Participant Id'].isin([None])][fields]
     # Return rows that match the participant ids
     return gw_results[gw_results['Participant Id'].isin(participant_ids)][fields]
 
