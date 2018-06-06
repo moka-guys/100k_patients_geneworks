@@ -112,8 +112,43 @@ def main():
     gw_results = query_geneworks(list(ir_id_dataframe['Participant Id']))
     # Merge dataframes with an outer join on 'partcipant_id'
     all_results = ir_id_dataframe.merge(gw_results, how='outer', on='Participant Id')
+    # Concatenate missing columns to dataframe
+    missing_columns = [
+        'relationship',
+        'status',
+        'gel_sequence_id',
+        'nhs_number',
+        'sex',
+        'panel',
+        'clinician',
+        'date results received'
+    ]
+    all_results = pandas.concat([all_results, pandas.DataFrame(columns=missing_columns)])
+    # Set relationship column to proband
+    all_results['relationship'] = 'proband'
     # To make data transfer easier re-order the columns so they match the order in GeL confirmations spreadsheet
-    all_results = all_results[['request_id', 'cip', 'ir_id', 'version', 'FirstName', 'LastName', 'DoB', ' family_id', 'Participant Id', 'PatientTrustID']]
+    all_results = all_results[
+        [
+        'request_id',
+        'cip',
+        'ir_id',
+        'version',
+        'FirstName',
+        'LastName',
+        'DoB',
+        ' family_id',
+        'relationship',
+        'status',
+        'gel_sequence_id',
+        'Participant Id',
+        'nhs_number',
+        'sex',
+        'panel',
+        'PatientTrustID',
+        'clinician',
+        'date results received'
+        ]
+    ]
     # Write results to csv file
     all_results.to_csv(out_file, index=False)
 
