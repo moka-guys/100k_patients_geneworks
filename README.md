@@ -11,4 +11,29 @@ We need to identify these samples so that we can inform clinicians and add detai
 
 This script takes a csv file (which can be created by copying and pasting directly from the results email into a text file), gets the participant ID from the CIPAPI, and uses this to return patient information from Geneworks.
 
-If any participant IDs aren't found in Geneworks, a note will be added to the bottom of the output file.
+## Usage
+
+This script requires access to the CIPAPI so must be run on our trust linux server.
+
+Requirements:
+
+* Python 2.7
+* Access to Geneworks via ODBC
+* Access to CIPAPI
+* JellyPy (in PYTHONPATH)
+* pyodbc
+* pandas
+
+Create the input csv file (see above) and transfer to the server where code will be run.
+
+On `SV-TE-GENAPP01` activate the `jellypy` conda environment so that above requirements are met:
+
+```
+source activate jellypy
+```
+
+Run the script:
+
+```
+python /home/mokaguys/Documents/100k_patients_geneworks/100k_geneworks_participants.py -i INPUT_FILE -o OUTPUT_FILE
+```
