@@ -82,16 +82,22 @@ def query_geneworks(participant_ids):
     Takes a list of GeL participant IDs and returns a dataframe containing patient information from Geneworks
     """
     # Connect to GW
-    cnxn = pyodbc.connect("DRIVER={ODBC Driver 13 for SQL Server}; SERVER=10.188.194.121; DATABASE=geneworks; UID=moka; PWD=moka", autocommit=True)
+    cnxn = pyodbc.connect('DRIVER={ODBC Driver 13 for SQL Server}; SERVER=10.188.194.121; DATABASE=geneworks; UID=moka; PWD=moka', autocommit=True)
     # SQL for stored procedure to return all GMC participants (unfortanately cannot filter this on participant ID so need to return everything)
-    sql = "EXEC SelectRegister_GMCParticipants_RegisterEntryDetails"
+    sql = 'EXEC SelectRegister_GMCParticipants_RegisterEntryDetails'
     # Execute SQL and return results in pandas dataframe
     gw_results = pandas.read_sql(sql,cnxn)
     # Fields that are required from geneworks results
     fields = ['PatientTrustID', 'LastName', 'FirstName', 'DoB', 'Participant Id']
-    print gw_results[gw_results['Participant Id'].isin([None])][fields]
     # Return rows that match the participant ids
-    return gw_results[gw_results['Participant Id'].isin(participant_ids)][fields]
+    gw_results = gw_results[gw_results['Participant Id'].isin(participant_ids)][fields]
+    # SQL for PatientLinked view to get NHS number and sex
+    sql = "SELECT PatientTrustID, NHSNo, Gender FROM PatientLinked WHERE PatientTrustID in ('{PRUs}')".format(
+        PRUs="','".join(gw_results['PatientTrustID'])
+    )
+    # Merge results of above query into the gw_results dataframe. Use outer join to ensure no rows get lost.
+    return gw_results.merge(pandas.read_sql(sql,cnxn), how='outer', on='PatientTrustID')
+
 
 def main():
     # Get command line arguments
@@ -110,15 +116,13 @@ def main():
     add_participant_id_to_df(ir_id_dataframe)
     # Query Geneworks using list of participant IDs from dataframe, returns a dataframe with results
     gw_results = query_geneworks(list(ir_id_dataframe['Participant Id']))
-    # Merge dataframes with an outer join on 'partcipant_id'
+    # Merge dataframes with an outer join on 'partcipant_id'. Use outer join to ensure no rows get lost.
     all_results = ir_id_dataframe.merge(gw_results, how='outer', on='Participant Id')
     # Concatenate missing columns to dataframe
     missing_columns = [
         'relationship',
         'status',
         'gel_sequence_id',
-        'nhs_number',
-        'sex',
         'panel',
         'clinician',
         'date results received'
@@ -141,8 +145,8 @@ def main():
         'status',
         'gel_sequence_id',
         'Participant Id',
-        'nhs_number',
-        'sex',
+        'NHSNo',
+        'Gender',
         'panel',
         'PatientTrustID',
         'clinician',
