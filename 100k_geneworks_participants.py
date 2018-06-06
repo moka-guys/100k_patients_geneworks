@@ -51,7 +51,7 @@ def get_ir_id_dataframe(input_csv):
     request_id_df = pandas.read_csv(input_csv)
     # Split the request_id (e.g. OPA-1234-1) column into 3 seperate fields cip, ir_id and version (e.g. 'OPA', '1234' and '1')
     request_id_df[['cip', 'ir_id', 'version']] = request_id_df['request_id'].str.split('-',expand=True)
-    # Return a list of the interpretation request IDs
+    # Return the dataframe
     return request_id_df
 
 def get_participant_id(ir_id):
@@ -65,7 +65,7 @@ def add_participant_id_to_df(request_id_df):
     """
     Takes a dataframe containing ir_id and adds participant ID from CIPAPI
     """
-    # Use pandas .apply() method to call get_participant_id function for every ir_id in the dataframe. The results is stored in a new field 'Participant Id'.
+    # Use pandas .apply() method to call get_participant_id function for every ir_id in the dataframe. The result is stored in a new field 'Participant Id'.
     request_id_df['Participant Id'] = request_id_df['ir_id'].apply(get_participant_id)
 
 def query_geneworks(participant_ids):
@@ -98,7 +98,7 @@ def main():
     ir_id_dataframe = get_ir_id_dataframe(in_file)
     # Use CIPAPI to find participant IDs and add to dataframe
     add_participant_id_to_df(ir_id_dataframe)
-    # Query Geneworks using list of participant IDs from dataframe, returens a dataframe with results
+    # Query Geneworks using list of participant IDs from dataframe, returns a dataframe with results
     gw_results = query_geneworks(list(ir_id_dataframe['Participant Id']))
     # Merge dataframes with an outer join on 'partcipant_id'
     all_results = ir_id_dataframe.merge(gw_results, how='outer', on='Participant Id')
