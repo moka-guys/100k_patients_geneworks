@@ -56,17 +56,18 @@ def get_ir_id_dataframe(input_csv):
     # Return the dataframe
     return request_id_df
 
-def get_participant_id(ir_id):
+def get_participant_id(int_req):
     """
-    Takes an interpretation request ID and returns participant ID from CIPAPI
+    Takes a row from a pandas series containing 'ir_id' and 'version' columns and uses these to return the participant ID from CIPAPI
     """
-    # If no ir_id is passed to function, return NaN. (Use NaN rather than None, pandas convention and this prevents reuslts with no participant ID being returned from GW)
-    if not ir_id:
+    # If either the ir_id or version is missing, return NaN. (Use NaN rather than None, pandas convention and this prevents reuslts with no participant ID being returned from GW)
+    if not int_req['ir_id'] or not int_req['version']:
         return np.NaN
-    # Use JellyPy to query CIP-API and get proband ID from the interpretation request ID. 
+    # Use JellyPy to query CIP-API and get proband ID using the interpretation request ID and version to filter. 
     try:
-        return get_interpretation_request_list(interpretation_request_id=ir_id)[0]['proband']
-    # if no proband ID is returned from CIPAPI, return NaN. (Use NaN rather than None, pandas convention and this prevents reuslts with no participant ID being returned from GW)
+        return get_interpretation_request_list(interpretation_request_id=int_req['ir_id'],version=int_req['version'])[0]['proband']
+    # If no matching interpretation request ID is returned from CIPAPI, there will be no 'proband' field so the above code will generate an IndexError.
+    # In this situation return NaN. (Use NaN rather than None, pandas convention and this prevents reuslts with no participant ID being returned from GW)
     except IndexError:
         return np.NaN
 
@@ -74,8 +75,9 @@ def add_participant_id_to_df(request_id_df):
     """
     Takes a dataframe containing ir_id and adds participant ID from CIPAPI
     """
-    # Use pandas .apply() method to call get_participant_id function for every ir_id in the dataframe. The result is stored in a new field 'Participant Id'.
-    request_id_df['Participant Id'] = request_id_df['ir_id'].apply(get_participant_id)
+    # Use pandas .apply() method to call get_participant_id function for every row in the dataframe (axis=1 specifies to use rows rather than columns). 
+    # The result is stored in a new field 'Participant Id'.
+    request_id_df['Participant Id'] = request_id_df.apply(get_participant_id, axis=1)
 
 def query_geneworks(participant_ids):
     """
